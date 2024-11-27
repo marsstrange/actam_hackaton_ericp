@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eric Prydz with Tone.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e2f;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #e64a19;
+        }
+        button:active {
+            background-color: #d84315;
+        }
+        .slider-container {
+            margin: 10px 0;
+        }
+        .slider {
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Eric Prydz with Tone.js</h1>
+    <button id="playSound">Play</button>
+    <button id="stopSound">Stop</button>
+    
+    <div class="slider-container">
+        <label for="kickSlider">Kick Volume:</label>
+        <input type="range" id="kickSlider" class="slider" min="0" max="1" value="1" step="0.01">
+    </div>
+    
+    <div class="slider-container">
+        <label for="clapSlider">Clap Volume:</label>
+        <input type="range" id="clapSlider" class="slider" min="0" max="1" value="1" step="0.01">
+    </div>
+
+    <script>
+
+        let kick, clap, kickGain, clapGain, drumLoop, synth, chordSequence;
+
+        // Function to load and initialize the samples and synth
+        function loadSamples() {
+            kick = new Tone.Player("kick_clean_green.wav").toDestination();
+            clap = new Tone.Player("clap_electronic_punch.wav").toDestination();
+
+            // Create Tone.Gain nodes for volume control
+            kickGain = new Tone.Gain(1).toDestination();  
+            clapGain = new Tone.Gain(1).toDestination();  
+
+            // Connect samples to their gain nodes
+            kick.connect(kickGain);
+            clap.connect(clapGain);
+
+            // Create the synth (electric piano) for the chords
+            synth = new Tone.Synth({
+                oscillator: {
+                    type: 'square'
+                },
+                envelope: {
+                    attack: 0.1,
+                    decay: 0.1,
+                    sustain: 0.5,
+                    release: 0.4
+                }
+            }).toDestination();
+
+            // Set the BPM
+            Tone.Transport.bpm.value = 123;
+
+            // The drum loop pattern
+            drumLoop = new Tone.Loop((time) => {
+                kick.start(time);                
+                kick.start(time + 0.5);          
+                clap.start(time + 0.5);          
+            }, "1m");  // Loop every measure
+
+            // The note sequence and their durations
+            const notes = ["Bb4", "Bb4", "A4", "A4", "G4", "G4"];
+            const durations = ["8n", "8n", "8n", "8n", "8n", "4n"]; // Note durations
+
+            // Chord sequence using the notes and durations arrays
+            chordSequence = new Tone.Sequence((time, index) => {
+                const note = notes[index]; // Get the note
+                const duration = durations[index]; // Get the corresponding duration
+                synth.triggerAttackRelease(note, duration, time); // Trigger the note with the duration
+            }, [0, 1, 2, 3, 4, 5, 6]).start(0); // Start immediately and loop
+
+            // Set the sequence to loop
+            Tone.Transport.loop = true;
+            Tone.Transport.loopEnd = "4m"; // Loop every 4 measures
+        }
+
+        // Function to start the sound loop
+        function startLoop() {
+            Tone.start();  
+            Tone.Transport.start(); 
+            drumLoop.start(0);  
+            chordSequence.start(0); 
+        }
+
+        // Function to stop the sound loop
+        function stopLoop() {
+            drumLoop.stop();  
+            chordSequence.stop(); 
+            Tone.Transport.stop(); 
+        }
+
+        // Function to update the gain for a sound
+        function updateGain(slider, gainNode) {
+            const value = slider.value;
+            gainNode.gain.value = value; 
+        }
+
+        // Function to set up the slider controls
+        function setupSliders() {
+            const kickSlider = document.getElementById("kickSlider");
+            const clapSlider = document.getElementById("clapSlider");
+
+            // Sliders initialization 
+            kickSlider.value = kickGain.gain.value;
+            clapSlider.value = clapGain.gain.value;
+
+            // Update gain on slider change
+            kickSlider.addEventListener("input", (event) => {
+                updateGain(event.target, kickGain);
+            });
+
+            clapSlider.addEventListener("input", (event) => {
+                updateGain(event.target, clapGain);
+            });
+        }
+
+        // Initialization of the app
+        function initialize() {
+            loadSamples();  
+            setupSliders();  
+
+            document.getElementById("playSound").addEventListener("click", startLoop);
+
+            document.getElementById("stopSound").addEventListener("click", stopLoop);
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
