@@ -87,29 +87,36 @@
             }).toDestination();
 
             // Set the BPM
-            Tone.Transport.bpm.value = 123;
+            Tone.Transport.bpm.value = 130;
 
-            // The drum loop pattern
+// The drum loop pattern
+            // drumLoop = new Tone.Loop((time) => {
+            //     kick.start(time);                
+            //     kick.start(time + 0.5);          
+            //     clap.start(time + 0.5);          
+            // }, "1m");  // Loop every measure
+
             drumLoop = new Tone.Loop((time) => {
-                kick.start(time);                
-                kick.start(time + 0.5);          
-                clap.start(time + 0.5);          
-            }, "1m");  // Loop every measure
+                kick.start(time);              
+                clap.start(time + Tone.Time("8n") * 2);
+            }, "2n");  // Loop every 1 measure (1m = 4 beats at 4/4 time)
+
 
             // The note sequence and their durations
-            const notes = ["Bb4", "Bb4", "A4", "A4", "G4", "G4"];
-            const durations = ["8n", "8n", "8n", "8n", "8n", "4n"]; // Note durations
+            const notes = ["Bb4", "Bb4", "A4", "A4", "G4", "G4", "G4"];
+            //const notes = ["C4", "D4", "E4", "F4", "G4", "A4"];
+            const durations = ["8n", "8n", "8n", "8n", "8n", "8n"]; // Note durations
 
             // Chord sequence using the notes and durations arrays
             chordSequence = new Tone.Sequence((time, index) => {
                 const note = notes[index]; // Get the note
                 const duration = durations[index]; // Get the corresponding duration
                 synth.triggerAttackRelease(note, duration, time); // Trigger the note with the duration
-            }, [0, 1, 2, 3, 4, 5, 6]).start(0); // Start immediately and loop
+            }, [0, null, 1, 2, 3, 4, 5, 6]).start(0); // Start immediately and loop
 
             // Set the sequence to loop
             Tone.Transport.loop = true;
-            Tone.Transport.loopEnd = "4m"; // Loop every 4 measures
+            Tone.Transport.loopEnd = "1m"; // Loop every 4 measures
         }
 
         // Function to start the sound loop
