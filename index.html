@@ -56,9 +56,24 @@
         <input type="range" id="clapSlider" class="slider" min="0" max="1" value="1" step="0.01">
     </div>
 
+    <div class="slider-container">
+        <label for="chorusRateSlider">Chorus Rate:</label>
+        <input type="range" id="chorusRateSlider" class="slider" min="0" max="10" value="2.5" step="0.1">
+    </div>
+
+    <div class="slider-container">
+        <label for="chorusDepthSlider">Chorus Depth:</label>
+        <input type="range" id="chorusDepthSlider" class="slider" min="0" max="100" value="50" step="1">
+    </div>
+
+    <div class="slider-container">
+        <label for="reverbDecaySlider">Reverb Decay Time:</label>
+        <input type="range" id="reverbDecaySlider" class="slider" min="0" max="10" value="1" step="0.1">
+    </div>
+
     <script>
 
-        let kick, clap, kickGain, clapGain, drumLoop, synth, chordSequence;
+        let kick, clap, kickGain, clapGain, drumLoop, synth, chordSequence, chorus, reverb;
 
         // Function to load and initialize the samples and synth
         function loadSamples() {
@@ -74,9 +89,10 @@
             clap.connect(clapGain);
 
             // Create the synth (electric piano) for the chords
-            synth = new Tone.Synth({
+            synth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: {
-                    type: 'square'
+                    type: 'square',
+                    detune: 5        // Slight detuning for unison effect
                 },
                 envelope: {
                     attack: 0.01,
@@ -84,7 +100,17 @@
                     sustain: 0.3,
                     release: 0.3
                 }
-            }).toDestination();
+            })
+            .chain(
+                new Tone.Chorus(7, 2.5, 50),  // Adds chorus effect with rate, depth, and feedback
+                new Tone.Reverb(1),           // Adds reverb for spaciousness
+                //new Tone.FeedbackDelay("8n", 0.5),  // Adds delay effect, with 8th note delay time and feedback
+                //new Tone.Distortion(0.2),     // Adds mild distortion for warmth and character
+                Tone.Destination              // Finally output the sound to the destination (audio output)
+            );
+
+            chorus = synth.chain[0];  // Access the chorus effect
+            reverb = synth.chain[1];  // Access the reverb effect
 
             // Set the BPM
             Tone.Transport.bpm.value = 130;
@@ -134,10 +160,27 @@
             gainNode.gain.value = value; 
         }
 
+        // Function to update Chorus parameters
+        function updateChorusRate(slider) {
+            chorus.rate.value = slider.value;
+        }
+
+        function updateChorusDepth(slider) {
+            chorus.depth.value = slider.value;
+        }
+
+        // Function to update Reverb parameters
+        function updateReverbDecay(slider) {
+            reverb.decay = slider.value;
+        }
+
         // Function to set up the slider controls
         function setupSliders() {
             const kickSlider = document.getElementById("kickSlider");
             const clapSlider = document.getElementById("clapSlider");
+            const chorusRateSlider = document.getElementById("chorusRateSlider");
+            const chorusDepthSlider = document.getElementById("chorusDepthSlider");
+            const reverbDecaySlider = document.getElementById("reverbDecaySlider");
 
             // Sliders initialization 
             kickSlider.value = kickGain.gain.value;
@@ -150,6 +193,20 @@
 
             clapSlider.addEventListener("input", (event) => {
                 updateGain(event.target, clapGain);
+            });
+
+            // Update Chorus effects
+            chorusRateSlider.addEventListener("input", (event) => {
+                updateChorusRate(event.target);
+            });
+
+            chorusDepthSlider.addEventListener("input", (event) => {
+                updateChorusDepth(event.target);
+            });
+
+            // Update Reverb effect
+            reverbDecaySlider.addEventListener("input", (event) => {
+                updateReverbDecay(event.target);
             });
         }
 
